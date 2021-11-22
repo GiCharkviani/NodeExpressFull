@@ -1,13 +1,13 @@
 const path = require("path");
 
 const express = require("express");
+const mongoose = require("mongoose");
 
 const app = express();
 
-
 const errorController = require("./controllers/error");
-const mongoConnect = require('./util/database').mongoConnect;
-const User = require('./models/user');
+
+const User = require("./models/user");
 
 app.set("view engine", "ejs");
 app.set("views", "views");
@@ -19,19 +19,39 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
 
 app.use((req, res, next) => {
-    User.findById('619549cebe6d6a26399a53d2')
-    .then(user => {
-        req.user = new User(user.name, user.email, user.cart, user._id)
-        next()
+  User.findById("619bd8f98fc91fd080263549")
+    .then((user) => {
+      req.user = user;
+      next();
     })
-    .catch(console.log)
-})
+    .catch(console.log);
+});
 
 app.use("/admin", adminRoutes);
 app.use(shopRoutes);
 
 app.use(errorController.notFound);
 
-mongoConnect(() => {
-  app.listen(3000, console.log("Server is running"));
-})
+mongoose
+  .connect(
+    "mongodb+srv://giorgi:charkviani1616@cluster0.bobiq.mongodb.net/shop?retryWrites=true&w=majority"
+  )
+  .then(() => {
+    User.findOne().then((user) => {
+      if (!user) {
+        const user = new User({
+          name: "Gio",
+          email: "gi.charkviani@gmail.com",
+          cart: {
+            items: [],
+          },
+        });
+        user.save();
+      }
+    });
+
+    app.listen(3000, () => {
+      console.log("connected");
+    });
+  })
+  .catch(console.log);
