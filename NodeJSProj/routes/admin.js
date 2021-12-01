@@ -21,10 +21,6 @@ router.post("/add-product", [
     .isLength({min: 3})
     .trim(),
 
-    body('imageUrl')
-    // .isURL()
-    ,
-
     body('price')
     .isFloat(),
 
@@ -40,9 +36,6 @@ router.post("/edit-product", [
     .isString()
     .isLength({min: 3})
     .trim(),
-
-    body('imageUrl')
-    .isURL(),
 
     body('price')
     .isFloat(),
