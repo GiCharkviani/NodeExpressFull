@@ -51,10 +51,13 @@ const adminRoutes = require("./routes/admin");
 const shopRoutes = require("./routes/shop");
 const authRoutes = require("./routes/auth");
 
+
 app.use(express.urlencoded({ extended: true }));
 app.use(
   multer({ storage: fileStorage, fileFilter: fileFilter }).single("image")
 );
+
+
 app.use(express.static(path.join(__dirname, "public")));
 app.use("/images", express.static(path.join(__dirname, "images")));
 app.use(
@@ -104,6 +107,7 @@ app.use(errorController.notFound);
 
 app.use((error, req, res, next) => {
   // res.redirect('/500')
+  console.log(error)
   res.status(500).render("500", {
     pageTitle: "Error",
     path: "/500",
