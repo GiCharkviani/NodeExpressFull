@@ -65,8 +65,12 @@ mongoose
     "mongodb+srv://giorgi:charkviani1616@cluster0.bobiq.mongodb.net/postsApp?retryWrites=true&w=majority"
   )
   .then((result) => {
-    app.listen(8080, () => {
+    const server = app.listen(8080, () => {
       console.log("Server connected on 8080 port!");
     });
+    const io = require('./socket').init(server);
+    io.on('connection', socket => {
+      console.log('Client Connected!')
+    })
   })
   .catch(console.log);
