@@ -8,6 +8,8 @@ const { graphqlHTTP } = require("express-graphql");
 const graphqlSchema = require('./graphql/schema');
 const graphqlResolver = require('./graphql/resolvers');
 
+const auth = require('./middleware/auth')
+
 const app = express();
 
 const fileStorage = multer.diskStorage({
@@ -49,6 +51,8 @@ app.use((req, res, next) => {
   } // GraphQL-ამდე რომ არ მივუშვათ 'OPTIONS' რექვესტი
   next();
 });
+
+app.use(auth)
 
 app.use('/graphql', graphqlHTTP({
   schema: graphqlSchema,
