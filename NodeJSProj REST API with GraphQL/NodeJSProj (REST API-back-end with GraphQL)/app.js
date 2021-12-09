@@ -1,14 +1,17 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const path = require("path");
+
 const multer = require("multer");
 const { v4: uuidv4 } = require("uuid");
 const { graphqlHTTP } = require("express-graphql");
 
-const graphqlSchema = require('./graphql/schema');
-const graphqlResolver = require('./graphql/resolvers');
+const {clearImage} = require('./util/file')
 
-const auth = require('./middleware/auth')
+const graphqlSchema = require("./graphql/schema");
+const graphqlResolver = require("./graphql/resolvers");
+
+const auth = require("./middleware/auth");
 
 const app = express();
 
@@ -46,32 +49,50 @@ app.use((req, res, next) => {
     "GET, POST, PUT, PATCH, DELETE"
   ); // იგი ნებას დართავს უცხო რექვესტებს, რომ გამოიყენონ კონკრეტული მეთოდები
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization"); // იგი დააწესებს ან მოთხოვს, სპეციალურ ჰედერებს რომ შეიცავდნენ რექვესტები, რათა პასუხი დაუბრუნოს. აქაც შესაძლოა *-ის გამოყენება
-  if(req.method === 'OPTIONS') {
-    return res.sendStatus(200)
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
   } // GraphQL-ამდე რომ არ მივუშვათ 'OPTIONS' რექვესტი
   next();
 });
 
-app.use(auth)
+app.use(auth);
 
-app.use('/graphql', graphqlHTTP({
-  schema: graphqlSchema,
-  rootValue: graphqlResolver,
-  graphiql: true,
-  customFormatErrorFn(err) {
-    if(!err.originalError) {
-      return err;
-    }
-    const data = err.originalError.data;
-    const message = err.message || 'An error occured.'
-    const code = err.originalError.code || 500
-    return {
-      message: message,
-      status: code,
-      data: data
-    }
+app.put("/post-image", (req, res, next) => {
+  if(!req.isAuth) {
+    throw new Error('Not authenticated!')
   }
-}))
+  if (!req.file) {
+    return res.status(200).json({ message: "No file provided!" });
+  }
+  if (req.body.oldPath) {
+    clearImage(req.body.oldPath);
+  }
+  return res.status(200).json({message: 'File stored.', filePath: req.file.path})
+});
+
+
+
+app.use(
+  "/graphql",
+  graphqlHTTP({
+    schema: graphqlSchema,
+    rootValue: graphqlResolver,
+    graphiql: true,
+    customFormatErrorFn(err) {
+      if (!err.originalError) {
+        return err;
+      }
+      const data = err.originalError.data;
+      const message = err.message || "An error occured.";
+      const code = err.originalError.code || 500;
+      return {
+        message: message,
+        status: code,
+        data: data,
+      };
+    },
+  })
+);
 
 app.use((error, req, res, next) => {
   console.log(error);
@@ -94,3 +115,4 @@ mongoose
     });
   })
   .catch(console.log);
+
