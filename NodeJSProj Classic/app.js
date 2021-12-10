@@ -1,4 +1,6 @@
 const path = require("path");
+const fs = require("fs");
+// const https = require("https");
 
 const express = require("express");
 const mongoose = require("mongoose");
@@ -7,9 +9,11 @@ const MongoDBStore = require("connect-mongodb-session")(session);
 const csrf = require("csurf");
 const flash = require("connect-flash");
 const multer = require("multer");
+const helmet = require("helmet");
+const compression = require("compression");
+const morgan = require("morgan");
 
-const MONGODB_URI =
-  "mongodb+srv://giorgi:charkviani1616@cluster0.bobiq.mongodb.net/shop?&w=majority";
+const MONGODB_URI = ` mongodb+srv://${process.env.MONGO_USER}:${process.env.MONGO_PASSWORD}@cluster0.bobiq.mongodb.net/${process.env.MONGO_DEFAULT_DATABASE}?&w=majority`;
 
 const app = express();
 const store = new MongoDBStore({
@@ -18,6 +22,9 @@ const store = new MongoDBStore({
 });
 
 const csrfProtection = csrf();
+
+// const privateKey = fs.readFileSync("server.key");
+// const certificate = fs.readFileSync("server.cert");
 
 const errorController = require("./controllers/error");
 
@@ -51,12 +58,19 @@ const adminRoutes = require("./routes/admin");
 const shopRoutes = require("./routes/shop");
 const authRoutes = require("./routes/auth");
 
+const accessLogStream = fs.createWriteStream(
+  path.join(__dirname, "access.log"),
+  { flags: "a" }
+);
+
+app.use(helmet());
+app.use(compression());
+app.use(morgan("combined", { stream: accessLogStream }));
 
 app.use(express.urlencoded({ extended: true }));
 app.use(
   multer({ storage: fileStorage, fileFilter: fileFilter }).single("image")
 );
-
 
 app.use(express.static(path.join(__dirname, "public")));
 app.use("/images", express.static(path.join(__dirname, "images")));
@@ -107,7 +121,7 @@ app.use(errorController.notFound);
 
 app.use((error, req, res, next) => {
   // res.redirect('/500')
-  console.log(error)
+  console.log(error);
   res.status(500).render("500", {
     pageTitle: "Error",
     path: "/500",
@@ -118,8 +132,16 @@ app.use((error, req, res, next) => {
 mongoose
   .connect(MONGODB_URI)
   .then(() => {
-    app.listen(3000, () => {
-      console.log("connected");
-    });
+    // https
+    //   .createServer({ key: privateKey, cert: certificate }, app)
+    //   .listen(process.env.PORT || 3000, () => {
+    //     console.log("connected");
+    //   });
+    app.listen(process.env.PORT || 3000);
   })
   .catch(console.log);
+
+
+/* 
+NODE_ENV=production MONGO_USER=giorgi MONGO_PASSWORD=charkviani1616 MONGO_DEFAULT_DATABASE=shop STRIPE_KEY=sk_test_51K2JFkKflcMbvBXy0AZa42iqrTxtftJW6UnZgXRvEk5AlbCub8yMgwefVDPCkY2wbB7ihAf9P23tlWzcf0CSwgw000TfrEVZ2M 
+*/
